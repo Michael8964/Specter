@@ -33,7 +33,7 @@
 
 ## M3 — AgentBench 评测（支柱3）【B】
 
-- [ ] P3.0 任务集改编（15-20个任务，含3-5个 held-out 标记；可提前，不依赖 P1）
+- [x] P3.0 任务集改编（15-20个任务，含3-5个 held-out 标记；可提前，不依赖 P1）—— 15 tasks (4 held-out, one per category) in `src/agentbench_os_tasks/`, see registry.py for held-out rationale and verify_smoke_test.py for the verifier self-check
 - [ ] P3.1 接受率对比实验（需 P1 完成）
 
 ## M4 — 自适应控制器 Mac 部分（支柱5前半）【A】
