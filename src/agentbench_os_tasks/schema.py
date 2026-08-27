@@ -35,7 +35,7 @@ class TaskSpec:
     touch anything outside it.
 
     golden_solution exists purely to test the verifier itself (mirrors
-    contracts/research-integrity.md 风险3's fault-injection requirement for
+    notes/project_plan_v9.md §9.6 风险3's fault-injection requirement for
     P1.2's correctness verifier): setup() then golden_solution() must make
     verify() pass, and setup() alone (untouched initial state) must make
     verify() fail. See verify_smoke_test.py, which asserts both directions

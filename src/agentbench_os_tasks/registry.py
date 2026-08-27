@@ -16,8 +16,7 @@ categories hit 4 each. This is the "don't pad to hit a round number"
 instruction, not laziness; §16 悬而未决问题4 already flagged that the
 final count could land under 20 once held-out tasks are subtracted.
 
-**Held-out discipline (contracts/research-integrity.md 风险1 /
-project_plan_v9.md §9.6 风险1)**: HELD_OUT_TASKS below is fixed at design
+**Held-out discipline (notes/project_plan_v9.md §9.6 风险1)**: HELD_OUT_TASKS below is fixed at design
 time. Nothing in this repository may run a held-out task's verify() against
 an actual model-produced trace, or use a held-out task's pass/fail signal
 to adjust GammaTune's hyperparameters (η, δ, γ_min/max, P5.0), until *all*

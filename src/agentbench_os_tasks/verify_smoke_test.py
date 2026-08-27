@@ -1,7 +1,7 @@
 """
 Verifier self-check for every task in registry.py -- run this, not manual
 inspection, to confirm a verify() function actually discriminates instead
-of silently always passing (contracts/research-integrity.md 风险3 applied
+of silently always passing (notes/project_plan_v9.md §9.6 风险3 applied
 to P3.0's verifiers instead of P1.2's greedy comparator).
 
 For every task, including held-out ones:
