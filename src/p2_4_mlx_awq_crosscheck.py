@@ -1,6 +1,6 @@
 """P2.4 (Mac part) -- mlx_lm.awq cross-check.
 
-project_plan_v9.md SS7 P2.4 / SS3 non-goal 5 / ADR-004: Mac cannot produce a real
+project_plan_v9.md SS7 P2.4 / SS3 non-goal 5 / SS8's quant-baseline-tooling row: Mac cannot produce a real
 quantized-inference speed number through the PyTorch/HF stack (SS9.1 Risk B --
 PyTorch's legacy `torch.quantize_per_tensor` "Quantized" backend was never
 ported to MPS). `mlx-lm` is the one named exception: it has its own AWQ
@@ -14,7 +14,7 @@ and records real speed/memory numbers before/after.
 
 This number is a free cross-validation reference point ONLY. It is not a
 substitute for the cloud-stage LLM Compressor GPTQ comparison (SS3 non-goal 5,
-ADR-004 Consequences).
+SS8's quant-baseline-tooling row).
 
 Two phases, run as separate subprocesses so each gets a clean process (no
 Metal cache / peak-memory carryover between the bf16 and quantized model, and
@@ -67,7 +67,10 @@ RESULT_PATH = RESULTS_DIR / "p2_4_mlx_awq_result.json"
 #
 # NUM_SAMPLES/SEQUENCE_LENGTH deviate from the CLI defaults (128 / 512): a
 # first run with the CLI defaults was killed after 51 min at ~18GB resident
-# and climbing, thrashing this 24GB Mac's swap (known-pitfalls.md pitfall 8).
+# and climbing, thrashing this 24GB Mac's swap. (This is a pitfall specific
+# to mlx_lm.awq's own implementation, discovered while running this script --
+# it is not one of project_plan_v9.md's numbered 坑1-12; 坑8 there is about
+# draft-model/KV-cache memory contention, a different issue.)
 # Root cause (read from mlx_lm/quant/awq.py awq_quantize(), not guessed): the
 # per-layer `input_feat` calibration-activation cache is attached as an
 # attribute directly on each Linear submodule object, which is still
@@ -225,7 +228,8 @@ def main():
         "note": (
             "This number is a free Mac-side cross-validation reference point "
             "only. It does NOT substitute for the cloud-stage LLM Compressor "
-            "GPTQ comparison (project_plan_v9.md SS3 non-goal 5, ADR-004)."
+            "GPTQ comparison (project_plan_v9.md SS3 non-goal 5, SS8's "
+            "quant-baseline-tooling row)."
         ),
         "hf_source_model": HF_SOURCE_MODEL,
         "baseline_mlx_model": BASELINE_MLX_MODEL,
