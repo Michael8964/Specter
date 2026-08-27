@@ -1,0 +1,40 @@
+{
+  "stage": "P1.0",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+
+  "vocab": {
+    "draft_size": 151665,
+    "target_size": 151665,
+    "match": true
+  },
+
+  "greedy_agreement": {
+    "tokens_tested": 50,
+    "matching_tokens": 47,
+    "agreement_rate": 0.94
+  },
+
+  "pytorch_acceptance": {
+    "contexts_tested": 120,
+    "overall_alpha": 0.7685,
+    "minimum_alpha": 0.2222,
+    "maximum_alpha": 0.9998
+  },
+
+  "mlx_acceptance": {
+    "contexts_tested": 120,
+    "overall_alpha": 0.7663,
+    "minimum_alpha": 0.1943,
+    "maximum_alpha": 1.0
+  },
+
+  "cross_framework": {
+    "absolute_alpha_difference": 0.0022
+  },
+
+  "gate": {
+    "threshold": 0.65,
+    "result": "PASS"
+  }
+}

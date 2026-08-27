@@ -13,9 +13,25 @@ from src.model_loader import (
 
 
 PROMPTS = [
+    # Coding
     "Write a Python function that checks whether a number is prime.",
+    "Implement binary search in Java.",
+    "Write a SQL query to find duplicate emails.",
+
+    # Factual QA
     "The capital of France is",
+    "The largest planet in the solar system is",
+    "Water freezes at a temperature of",
+
+    # Explanation
     "Explain why the sky is blue in simple terms.",
+    "Explain how a hash table works.",
+    "Explain what DNS does in simple terms.",
+
+    # Structured / instruction
+     "Return a JSON object with fields name, age, and city.",
+    "List three advantages of using Linux servers.",
+    "Summarize the benefits of unit testing in three sentences.",
 ]
 
 STEPS_PER_PROMPT = 10
