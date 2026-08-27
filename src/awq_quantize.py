@@ -2,8 +2,9 @@
 Hand-written AWQ-style activation-aware weight quantization.
 
 See notes/project_plan_v9.md §7 "支柱2：AWQ 量化" (P2.0/P2.1) and appendix A.3
-for the algorithm this implements, and contracts/decisions/ADR-003 for why
-AWQ (not GPTQ) is the hand-implemented method. This module implements the
+for the algorithm this implements, and §8's decision table ("量化自研对象"
+row: AWQ over GPTQ) for why AWQ (not GPTQ) is the hand-implemented method.
+This module implements the
 per-channel scale search and fake-quantize routines from scratch; it does not
 call into AutoAWQ / llm-awq. AutoAWQ's quantizer.py was read only to confirm
 the grid-search structure (uniform grid over a scaling exponent alpha) before
@@ -143,8 +144,8 @@ def fake_quantize_groupwise(w: torch.Tensor, bits: int, group_size: int) -> torc
     Returns a same-shape, same-dtype tensor of dequantized (still float) values
     -- this is "fake" quantization (simulates the numerical effect of int
     storage using plain float math), not a real packed int4 tensor. Real
-    int4 kernels aren't reachable from MPS (see contracts/known-pitfalls.md
-    风险B); this is what §9.1 calls the Mac-stage-appropriate substitute.
+    int4 kernels aren't reachable from MPS (see notes/project_plan_v9.md
+    §9.1 风险B); this is what §9.1 calls the Mac-stage-appropriate substitute.
     """
     out_features, in_features = w.shape
     assert in_features % group_size == 0, (

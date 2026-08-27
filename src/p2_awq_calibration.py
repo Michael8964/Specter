@@ -19,8 +19,9 @@ so many words:
    length upward (FP16 gamma=2 -> INT8 gamma=8). SpecKV's BitsAndBytes arm
    compresses the model that speculative decoding calls once per step to
    verify gamma draft tokens -- i.e. the *target*/verifier, not the drafter.
-   For the AWQ arm to be a meaningful analog (even though §9.3 坑10 / ADR-008
-   explicitly say not to expect the same 4x magnitude), it has to compress
+   For the AWQ arm to be a meaningful analog (even though notes/project_plan_v9.md
+   §9.5 坑10 and §8's "量化-γ耦合实验的压缩方式" row explicitly say not to
+   expect the same 4x magnitude), it has to compress
    the same role: the verifier.
 2. System-level reasoning that's consistent with (1): optimal gamma trades
    off draft cost (paid gamma times per step) against verification cost
