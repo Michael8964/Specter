@@ -1,0 +1,156 @@
+{
+  "p1_1_rejection_sampling": {
+    "stage": "P1.1",
+    "description": "Rejection sampling core algorithm -- smoke test in sampling mode (temperature=1.0).",
+    "script": "scripts/p1_rejection_sampling.py",
+    "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "gamma": 5,
+    "max_new_tokens": 40,
+    "seed": 0,
+
+    "prompts": [
+      {
+        "prompt": "Write a Python function that checks whether a number is prime.",
+        "steps": [
+          {"step": 1, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 2, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 3, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 4, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 5, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 6, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 7, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 8, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 9, "n_accepted": 5, "gamma": 5, "tail": "bonus"}
+        ]
+      },
+      {
+        "prompt": "Implement binary search in Java.",
+        "steps": [
+          {"step": 1, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 2, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 3, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 4, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 5, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 6, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 7, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 8, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 9, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 10, "n_accepted": 5, "gamma": 5, "tail": "bonus"}
+        ]
+      },
+      {
+        "prompt": "The capital of France is",
+        "steps": [
+          {"step": 1, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 2, "n_accepted": 3, "gamma": 5, "tail": "resample"},
+          {"step": 3, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 4, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 5, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 6, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 7, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 8, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 9, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 10, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 11, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 12, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 13, "n_accepted": 0, "gamma": 4, "tail": "resample"},
+          {"step": 14, "n_accepted": 0, "gamma": 3, "tail": "resample"},
+          {"step": 15, "n_accepted": 2, "gamma": 2, "tail": "bonus"}
+        ]
+      },
+      {
+        "prompt": "Explain why the sky is blue in simple terms.",
+        "steps": [
+          {"step": 1, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 2, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 3, "n_accepted": 3, "gamma": 5, "tail": "resample"},
+          {"step": 4, "n_accepted": 3, "gamma": 5, "tail": "resample"},
+          {"step": 5, "n_accepted": 2, "gamma": 5, "tail": "resample"},
+          {"step": 6, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 7, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 8, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 9, "n_accepted": 0, "gamma": 5, "tail": "resample"},
+          {"step": 10, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 11, "n_accepted": 1, "gamma": 4, "tail": "resample"},
+          {"step": 12, "n_accepted": 0, "gamma": 2, "tail": "resample"},
+          {"step": 13, "n_accepted": 0, "gamma": 1, "tail": "resample"}
+        ]
+      },
+      {
+        "prompt": "Return a JSON object with fields name, age, and city.",
+        "steps": [
+          {"step": 1, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 2, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 3, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 4, "n_accepted": 4, "gamma": 5, "tail": "resample"},
+          {"step": 5, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 6, "n_accepted": 5, "gamma": 5, "tail": "bonus"},
+          {"step": 7, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 8, "n_accepted": 1, "gamma": 5, "tail": "resample"},
+          {"step": 9, "n_accepted": 5, "gamma": 5, "tail": "bonus"}
+        ]
+      }
+    ],
+
+    "summary": {
+      "total_accepted_incl_bonus": 162,
+      "total_proposed_incl_bonus_slot": 283,
+      "empirical_accept_ratio": 0.5724
+    },
+
+    "notes": "This is a rough smoke-test sanity check (small sample, high per-step variance -- see step-level swings from 0/5 to 5/5), not the rigorous statistical test required by P1.3. Not directly comparable to results/p1_0_gate_result.json's theoretical alpha upper bound (pytorch_acceptance.overall_alpha = 0.7685): that number was computed along the target model's own greedy trajectory over 120 contexts, while this empirical ratio is computed along the actual self-generated speculative-decoding trajectory (sampling mode) over far fewer effective samples."
+  },
+
+  "p1_2_greedy_verifier": {
+    "stage": "P1.2",
+    "description": "Greedy mode verifier -- speculative decoding (temperature=0) output compared token-for-token against the target model's independent greedy decoding (no draft model involved).",
+    "script": "scripts/p1_greedy_verifier.py",
+    "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "gamma": 5,
+    "max_new_tokens": 30,
+
+    "prompts": [
+      {
+        "prompt": "Write a Python function that checks whether a number is prime.",
+        "reference_length": 42,
+        "spec_decode_length": 42,
+        "mismatched_positions": 0,
+        "result": "PASS"
+      },
+      {
+        "prompt": "Implement binary search in Java.",
+        "reference_length": 36,
+        "spec_decode_length": 36,
+        "mismatched_positions": 0,
+        "result": "PASS"
+      },
+      {
+        "prompt": "The capital of France is",
+        "reference_length": 35,
+        "spec_decode_length": 35,
+        "mismatched_positions": 0,
+        "result": "PASS"
+      },
+      {
+        "prompt": "Explain why the sky is blue in simple terms.",
+        "reference_length": 41,
+        "spec_decode_length": 41,
+        "mismatched_positions": 0,
+        "result": "PASS"
+      },
+      {
+        "prompt": "Return a JSON object with fields name, age, and city.",
+        "reference_length": 43,
+        "spec_decode_length": 43,
+        "mismatched_positions": 0,
+        "result": "PASS"
+      }
+    ],
+
+    "overall_result": "PASS",
+
+    "notes": "Reached 100% PASS after fixing three implementation bugs, each found via actually running the scripts rather than by code review alone: (1) an MPS/CPU torch.Generator device mismatch inside the sampling helper (_sample), surfaced by scripts/p1_rejection_sampling.py; (2) the greedy-mode rejection branch incorrectly reused the residual-resampling formula that is only correct for sampling mode, instead of returning the target model's own argmax -- violates the greedy-equivalence proof; (3) a round can emit up to gamma+1 tokens (the +1 being the bonus token), which was not being truncated at EOS or at the max_new_tokens budget, causing spec-decode output to be exactly 1 token longer than the reference in 3 of 5 prompts on the first PASS attempt (0 mismatched positions even then -- only a length/budget bug, not a token-value bug)."
+  }
+}
