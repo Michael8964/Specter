@@ -1,0 +1,55 @@
+{
+  "p1_3_fault_injection": {
+    "stage": "P1.3 (partial)",
+    "description": "Fault injection test for the correctness verifier itself -- deliberately reintroduces three known bugs into the rejection-sampling algorithm and checks whether the same token-for-token comparison methodology used by P1.2 (scripts/p1_greedy_verifier.py) actually detects each one, rather than silently reporting a match regardless of what the implementation does. Addresses project_plan_v9.md Section 9.6, Risk 3.",
+    "script": "scripts/p1_fault_injection.py",
+    "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "gamma": 5,
+    "max_new_tokens": 30,
+
+    "prompts": [
+      "Write a Python function that checks whether a number is prime.",
+      "Implement binary search in Java.",
+      "The capital of France is"
+    ],
+
+    "mutations": [
+      {
+        "name": "bonus_from_draft",
+        "description": "When a step accepts all gamma draft tokens, the bonus token is sampled from the DRAFT model's distribution instead of the TARGET model's -- the exact mistake Pitfall 2 (project_plan_v9.md Section 9.2) warns against. Only affects steps where every candidate is accepted.",
+        "results": [
+          {"prompt_index": 1, "mismatches": 21, "length_mismatch": false, "outcome": "DETECTED"},
+          {"prompt_index": 2, "mismatches": 12, "length_mismatch": false, "outcome": "DETECTED"},
+          {"prompt_index": 3, "mismatches": 17, "length_mismatch": false, "outcome": "DETECTED"}
+        ],
+        "verdict": "DETECTED (caught on 3/3 prompts)"
+      },
+      {
+        "name": "greedy_residual_resample",
+        "description": "Greedy-mode rejection reuses the sampling-mode residual formula (norm(max(0, p_target - p_draft))) instead of the target model's own argmax. This is the exact bug that was found and fixed in src/speculative_decode.py during P1.2. Only affects steps where at least one candidate is rejected.",
+        "results": [
+          {"prompt_index": 1, "mismatches": 0, "length_mismatch": false, "outcome": "MISSED"},
+          {"prompt_index": 2, "mismatches": 30, "length_mismatch": false, "outcome": "DETECTED"},
+          {"prompt_index": 3, "mismatches": 28, "length_mismatch": false, "outcome": "DETECTED"}
+        ],
+        "verdict": "DETECTED (caught on 2/3 prompts; MISSED on prompt 1)"
+      },
+      {
+        "name": "swap_accepted_order",
+        "description": "Reverses the order of already-accepted tokens before they are appended -- a structural corruption independent of the accept/reject probability math.",
+        "results": [
+          {"prompt_index": 1, "mismatches": 25, "length_mismatch": false, "outcome": "DETECTED"},
+          {"prompt_index": 2, "mismatches": 26, "length_mismatch": false, "outcome": "DETECTED"},
+          {"prompt_index": 3, "mismatches": 28, "length_mismatch": false, "outcome": "DETECTED"}
+        ],
+        "verdict": "DETECTED (caught on 3/3 prompts)"
+      }
+    ],
+
+    "overall_result": "PASS",
+    "pass_criterion": "Each mutation counts as caught if it is DETECTED on at least one of the 3 prompts. All 3 mutations met this bar.",
+
+    "notes": "All three known failure modes were successfully detected at least once, showing the P1.2-style token-for-token comparison is not a rubber stamp -- it has real teeth against these specific bugs. However, prompt 1 MISSED the greedy_residual_resample mutation (0 mismatches), which is worth recording honestly rather than smoothing over: this bug only manifests when (a) a rejection actually occurs in that step, and (b) the buggy residual-formula argmax happens to differ from the target model's true greedy argmax. When the draft model assigns low probability to the target's top candidate, subtracting draft's distribution from target's often does not change the argmax, so the buggy formula can coincidentally reproduce the correct token even though the implementation is wrong. This is a concrete illustration of why a single small-sample pass/fail check is not sufficient evidence of correctness -- it directly motivates the still-unstarted second half of P1.3 (rigorous statistical validation of empirical alpha vs. the theoretical E[min(p,q)] formula over many more contexts), rather than treating this fault-injection run alone as full proof the verifier has no blind spots."
+  }
+}
