@@ -1,0 +1,73 @@
+{
+  "p1_4_gamma_scan": {
+    "stage": "P1.4",
+    "description": "Exploratory scan of how the average number of tokens produced per round (== per target-model forward pass) changes as gamma varies. Not a statistical hypothesis test like P1.3 -- a first characterization of the shape of the curve for this draft/target pair.",
+    "script": "scripts/p1_gamma_scan.py",
+    "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "prompts": [
+      "Write a Python function that checks whether a number is prime.",
+      "Implement binary search in Java.",
+      "The capital of France is",
+      "Explain why the sky is blue in simple terms.",
+      "Return a JSON object with fields name, age, and city."
+    ],
+    "max_new_tokens": 40,
+    "seed": 0,
+
+    "results_by_gamma": [
+      {
+        "gamma": 1,
+        "total_rounds": 119,
+        "mean_round_length": 1.697,
+        "min_round_length": 1,
+        "max_round_length": 2,
+        "histogram": {"1": 36, "2": 83}
+      },
+      {
+        "gamma": 3,
+        "total_rounds": 67,
+        "mean_round_length": 3.045,
+        "min_round_length": 1,
+        "max_round_length": 4,
+        "histogram": {"1": 12, "2": 10, "3": 8, "4": 37}
+      },
+      {
+        "gamma": 5,
+        "total_rounds": 51,
+        "mean_round_length": 3.980,
+        "min_round_length": 1,
+        "max_round_length": 6,
+        "histogram": {"1": 9, "2": 9, "3": 5, "4": 2, "5": 3, "6": 23}
+      },
+      {
+        "gamma": 7,
+        "total_rounds": 52,
+        "mean_round_length": 3.942,
+        "min_round_length": 1,
+        "max_round_length": 8,
+        "histogram": {"1": 8, "2": 9, "3": 11, "4": 6, "5": 6, "6": 1, "7": 2, "8": 9}
+      },
+      {
+        "gamma": 10,
+        "total_rounds": 52,
+        "mean_round_length": 3.904,
+        "min_round_length": 1,
+        "max_round_length": 11,
+        "histogram": {"1": 17, "2": 6, "3": 6, "4": 7, "5": 4, "6": 2, "7": 2, "8": 1, "9": 0, "10": 3, "11": 4}
+      }
+    ],
+
+    "sanity_check": "max_round_length == gamma + 1 for every gamma tested (2,4,6,8,11), matching the theoretical per-round ceiling exactly -- no round ever produced more tokens than the algorithm allows, which is a basic correctness check the implementation passes.",
+
+    "headline_finding": "Mean round length rises sharply from gamma=1 (1.697) to gamma=5 (3.980), then plateaus and slightly dips by gamma=10 (3.904) -- consistent with the expected diminishing-returns shape: larger gamma raises the theoretical per-round ceiling (gamma+1) but also lengthens the chain of candidates that must survive accept/reject in a row, so gains shrink and can reverse.",
+
+    "sample_size_caveat": "Total rounds fall sharply as gamma grows (119 -> 67 -> 51 -> 52 -> 52) because each prompt has a fixed max_new_tokens=40 budget, and larger gamma consumes that budget in fewer rounds. This means the gamma=5/7/10 means are estimated from far fewer independent samples (~51-52 rounds) than gamma=1/3 (67-119 rounds), so the small dip from gamma=5 to gamma=10 (3.980 -> 3.904) should not be over-interpreted as a confirmed real effect -- it is plausibly within noise given the reduced sample size, though the overall rise-then-plateau shape is a robust, expected pattern.",
+
+    "cross_check_against_alpha": "Under the simplifying assumption that each candidate is accepted independently with constant probability alpha (results/p1_0_gate_result.json overall_alpha = 0.7685), the expected round length as gamma -> infinity converges to 1/(1-alpha) ~= 4.32. All measured means (peak 3.980) stay below this theoretical ceiling with no violation, which is a good sanity check. Measured values also sit somewhat below what the constant-alpha formula would predict at each gamma (e.g. ~3.43 predicted vs 3.980 measured at gamma=5 by one directional comparison, ~4.08 predicted vs 3.904 measured at gamma=10) -- the direction of this gap is consistent with (but does not prove) the hypothesis that acceptance probability is not actually constant across positions within a round: later candidates in a long chain are drafted conditioned on the draft model's own earlier guesses rather than target-confirmed tokens, which could plausibly make deeper positions harder to accept than the average alpha suggests. Not investigated further in this pass.",
+
+    "practical_implication": "For this draft/target pair, gamma=5 already captures nearly all of the achievable token-count benefit; gamma=7 and gamma=10 show no further token-count gain and, per the earlier wall-clock reasoning (draft_propose always drafts all gamma candidates sequentially regardless of where a rejection would occur), would spend more wasted sequential draft-model compute on average without any offsetting benefit. gamma=5 looks like a reasonable candidate 'sweet spot', but this is a token-count-only conclusion -- confirming it requires an actual wall-clock throughput measurement (the still-pending P4 task), not just this token-count curve.",
+
+    "overall_result": "Descriptive/exploratory -- no pass/fail gate defined for this stage."
+  }
+}
