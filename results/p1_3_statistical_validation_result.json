@@ -1,0 +1,47 @@
+{
+  "p1_3_statistical_validation": {
+    "stage": "P1.3 (remaining half)",
+    "description": "Statistical validation of the sampling-mode accept/reject core: does the empirical acceptance rate, measured by actually running the real accept/reject test many times at a fixed context, converge to the theoretical alpha = sum_x min(p_draft(x), p_target(x)) formula already used by p1_acceptance.py?",
+    "script": "scripts/p1_statistical_validation.py",
+    "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "contexts": {
+      "prompts": 12,
+      "steps_per_prompt": 10,
+      "total_contexts": 120,
+      "note": "Same 12 prompts / target-greedy-path walk as scripts/p1_acceptance.py, so these are the exact same 120 contexts results/p1_0_gate_result.json's overall_alpha=0.7685 was computed over -- the two numbers are directly comparable, not two different experiments."
+    },
+    "trials_per_context": 300,
+    "confidence_band": "empirical vs theoretical flagged OUT OF MARGIN when |diff| > 2 standard errors (~95% two-sided band, Wald/normal approximation)",
+
+    "headline_numbers": {
+      "mean_theoretical_alpha": 0.7685,
+      "pooled_empirical_alpha": 0.7715,
+      "gap": 0.003,
+      "cross_reference": "results/p1_0_gate_result.json overall_alpha = 0.7685 (exact match on mean_theoretical_alpha confirms the same 120 contexts were used)"
+    },
+
+    "per_context_margin_check": {
+      "contexts_within_margin": 108,
+      "contexts_total": 120,
+      "pass_rate": 0.90,
+      "gate_threshold": 0.90,
+      "result": "PASS"
+    },
+
+    "out_of_margin_breakdown": {
+      "total_flagged": 12,
+      "boundary_artifacts": {
+        "count": 5,
+        "description": "Cases where empirical_alpha == 1.0000 exactly (all 300 trials accepted), which makes the Wald standard error formula sqrt(p(1-p)/n) evaluate to exactly 0. Any nonzero gap from theoretical then gets flagged, even when the gap is tiny (e.g. theoretical=0.9941 vs empirical=1.0000). This is a known failure mode of the normal-approximation confidence interval near p=0 or p=1, not evidence of an implementation bug -- a Wilson score interval would handle these correctly."
+      },
+      "expected_statistical_noise": {
+        "count": 7,
+        "description": "Real (non-boundary) gaps that crossed the 2-standard-error line by a small amount (diff/se roughly in the 2.1-2.9 range). Running 120 independent 95%-confidence checks is expected to produce roughly 120 * (1 - 0.954) ~= 5-6 false flags by chance alone (the multiple-comparisons effect), even when the underlying implementation is exactly correct. 7 observed is consistent with that expectation, not a sign of a systematic problem."
+      }
+    },
+
+    "overall_result": "PASS",
+    "notes": "The headline evidence for correctness is the aggregate match (mean theoretical 0.7685 vs pooled empirical 0.7715, gap of only 0.003 across 36,000 total trials), not the 90% per-context margin-check rate in isolation. That 90% figure is exactly in the range a correct implementation should produce once the Wald interval's known boundary weakness (5/12 flagged cases) and ordinary multiple-testing noise (7/12 flagged cases) are accounted for -- a naive '100% of contexts should be within margin' expectation would itself be a statistically wrong bar. Optional follow-up (not done here, flagged as a nice-to-have): rerun with a Wilson score interval instead of the Wald interval to remove the 5 boundary-artifact false flags cleanly."
+  }
+}
