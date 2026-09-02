@@ -1,0 +1,23 @@
+{
+  "stage": "P5.1",
+  "script": "scripts/p5_draft_target_split.py",
+  "description": "Splits phase-2 (hard) round time into draft-side vs target-side wall-clock, to test whether GammaTune's draft-side savings are masked by a roughly-constant target-side cost per round.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "fixed_gamma": 5,
+  "n_runs": 3,
+  "single_forward_pass_estimate": {"draft_ms": 21.5, "target_ms": 53.6, "c_target_over_draft": 2.49},
+  "per_run_seconds": {
+    "fixed":    {"draft": [1.725, 2.427, 1.766], "target": [1.012, 1.279, 0.962]},
+    "adaptive": {"draft": [1.291, 1.274, 1.114], "target": [1.115, 1.197, 1.125]}
+  },
+  "summary": {
+    "fixed":    {"draft_mean_s": 1.973, "draft_std_s": 0.322, "target_mean_s": 1.084, "target_std_s": 0.139},
+    "adaptive": {"draft_mean_s": 1.226, "draft_std_s": 0.079, "target_mean_s": 1.146, "target_std_s": 0.037},
+    "draft_side_time_saved_pct": 37.8,
+    "target_side_time_change_pct": -5.7
+  },
+  "interpretation": "Confirms the hypothesis directionally: the adaptive controller cuts draft-side compute substantially (37.8%) in the hard phase, but target-side time does not shrink -- it is actually very slightly higher under adaptive (-5.7%, i.e. adaptive's target time is 5.7% MORE than fixed's), plausibly because adaptive runs more, smaller rounds (more separate target_verify calls, each paying the same fixed per-call cost) than fixed gamma=5 does. Target-side time (~1.1s) is roughly on par with or larger than draft-side time in both configs, and it does not decrease with a smaller gamma, so the achievable end-to-end speedup is capped well below the draft-side savings -- consistent with the ~8-9% overall speedup measured in p5_gamma_tune_speedup.py and p5_fluctuation_scenario.py rather than anything close to 37.8%.",
+  "raw_log": "results/p5_draft_target_split.log",
+  "run_date": "2026-09-02"
+}

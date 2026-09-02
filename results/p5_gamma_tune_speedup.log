@@ -1,0 +1,53 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================================================
+Specter P5.1 - Wall-Clock Speedup: GammaTune vs Fixed Gamma
+============================================================
+Draft:  Qwen/Qwen2.5-0.5B-Instruct
+Target: Qwen/Qwen2.5-1.5B-Instruct
+fixed_gamma=5, max_new_tokens=40, n_runs=3
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<03:20,  1.44it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 416.16it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:01<07:24,  1.32s/it]Loading weights:  51%|█████     | 173/338 [00:01<00:00, 168.34it/s]Loading weights:  80%|████████  | 272/338 [00:02<00:00, 134.45it/s]Loading weights:  98%|█████████▊| 331/338 [00:02<00:00, 120.87it/s]Loading weights: 100%|██████████| 338/338 [00:02<00:00, 114.34it/s]
+
+Warming up (untimed)...
+
+============================================================
+Run 1/3
+============================================================
+  Prompt 1: fixed=40 tok / 1.380s (28.99 tok/s)  |  adaptive=40 tok / 1.566s (25.54 tok/s)
+  Prompt 2: fixed=40 tok / 2.706s (14.78 tok/s)  |  adaptive=40 tok / 1.920s (20.83 tok/s)
+  Prompt 3: fixed=40 tok / 1.926s (20.77 tok/s)  |  adaptive=40 tok / 1.795s (22.29 tok/s)
+
+  Run 1 totals: fixed=19.96 tok/s, adaptive=22.72 tok/s
+
+============================================================
+Run 2/3
+============================================================
+  Prompt 1: fixed=40 tok / 1.753s (22.82 tok/s)  |  adaptive=40 tok / 1.600s (24.99 tok/s)
+  Prompt 2: fixed=40 tok / 2.342s (17.08 tok/s)  |  adaptive=40 tok / 1.604s (24.93 tok/s)
+  Prompt 3: fixed=40 tok / 1.961s (20.39 tok/s)  |  adaptive=40 tok / 1.735s (23.05 tok/s)
+
+  Run 2 totals: fixed=19.82 tok/s, adaptive=24.29 tok/s
+
+============================================================
+Run 3/3
+============================================================
+  Prompt 1: fixed=40 tok / 1.444s (27.71 tok/s)  |  adaptive=40 tok / 1.633s (24.49 tok/s)
+  Prompt 2: fixed=40 tok / 1.871s (21.37 tok/s)  |  adaptive=40 tok / 1.871s (21.38 tok/s)
+  Prompt 3: fixed=40 tok / 1.915s (20.88 tok/s)  |  adaptive=40 tok / 2.172s (18.42 tok/s)
+
+  Run 3 totals: fixed=22.94 tok/s, adaptive=21.14 tok/s
+
+============================================================
+FINAL RESULT (3 runs, mean +/- std, tokens/second)
+============================================================
+Fixed gamma=5:  20.91 +/- 1.44 tok/s   (per-run: ['19.96', '19.82', '22.94'])
+GammaTune adaptive:  22.72 +/- 1.29 tok/s   (per-run: ['22.72', '24.29', '21.14'])
+
+Speedup (adaptive / fixed): 1.087x
+============================================================

@@ -1,0 +1,50 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+============================================================
+Specter P5.1 - Draft-side vs Target-side Time Split
+============================================================
+Same fluctuation scenario as p5_fluctuation_scenario.py
+fixed_gamma=5, n_runs=3
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:20,  3.61it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1034.09it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:00<02:48,  2.00it/s]Loading weights:  54%|█████▍    | 184/338 [00:00<00:00, 404.68it/s]Loading weights:  86%|████████▌ | 289/338 [00:01<00:00, 213.64it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 207.70it/s]
+
+Warming up (untimed)...
+
+Single isolated forward pass: draft=21.5ms, target=53.6ms
+c = T_target / T_draft (single pass estimate) = 2.49
+
+============================================================
+Run 1/3
+============================================================
+  Phase 2 (hard) -- Fixed:    draft=1.725s, target=1.012s
+  Phase 2 (hard) -- Adaptive: draft=1.291s, target=1.115s
+
+============================================================
+Run 2/3
+============================================================
+  Phase 2 (hard) -- Fixed:    draft=2.427s, target=1.279s
+  Phase 2 (hard) -- Adaptive: draft=1.274s, target=1.197s
+
+============================================================
+Run 3/3
+============================================================
+  Phase 2 (hard) -- Fixed:    draft=1.766s, target=0.962s
+  Phase 2 (hard) -- Adaptive: draft=1.114s, target=1.125s
+
+============================================================
+FINAL RESULT -- Phase 2 (hard) time breakdown, 3 runs mean +/- std
+============================================================
+                            Fixed gamma=5   GammaTune adaptive
+Draft-side time        1.973s +/- 0.322     1.226s +/- 0.079
+Target-side time       1.084s +/- 0.139     1.146s +/- 0.037
+
+Draft-side time saved by adaptive: 0.746s (37.8% reduction)
+Target-side time difference: -0.061s (-5.7% reduction)
+
+(If the hypothesis is right, draft-side time should drop a lot while target-side time stays roughly flat -- confirming the target model's cost dominates the round regardless of gamma, which is why the TOTAL time in p5_fluctuation_scenario.py barely moved.)
+============================================================

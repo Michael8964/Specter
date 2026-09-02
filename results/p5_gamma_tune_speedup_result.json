@@ -1,0 +1,23 @@
+{
+  "stage": "P5.1",
+  "script": "scripts/p5_gamma_tune_speedup.py",
+  "description": "Wall-clock throughput: GammaTune adaptive gamma vs fixed gamma=5, across 3 steady prompts, 3 runs.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "fixed_gamma": 5,
+  "max_new_tokens": 40,
+  "n_runs": 3,
+  "per_run_tokens_per_second": {
+    "fixed": [19.96, 19.82, 22.94],
+    "adaptive": [22.72, 24.29, 21.14]
+  },
+  "summary": {
+    "fixed_mean_tok_s": 20.91,
+    "fixed_std_tok_s": 1.44,
+    "adaptive_mean_tok_s": 22.72,
+    "adaptive_std_tok_s": 1.29,
+    "speedup_adaptive_over_fixed": 1.087
+  },
+  "raw_log": "results/p5_gamma_tune_speedup.log",
+  "run_date": "2026-09-02"
+}
