@@ -42,7 +42,7 @@ PROMPT = (
 GAMMA = 5
 MAX_NEW_TOKENS = 400
 N_RUNS = 3
-BASE_SEED = 400
+BASE_SEED = 900
 
 
 def sync():

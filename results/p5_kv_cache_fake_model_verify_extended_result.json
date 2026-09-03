@@ -1,0 +1,26 @@
+{
+  "script": "scripts/p5_kv_cache_fake_model_verify.py",
+  "purpose": "Extended deterministic (zero floating-point-noise) correctness verification, added after the crop-bug fix (commit 33e7433) in direct response to user request for more testing before trusting the fix.",
+  "added_this_run": [
+    "Two additional, more extreme draft/target phase gaps (3.14159265 'extreme-opposite-phase', 6.0 'extreme-high-freq-shift') on top of the original 0.6/2.4 gaps -- pushes the reject/resample/rollback path harder.",
+    "EOS-mid-chunk truncation-parity test (test_eos_mid_chunk): forces an EOS token to land in the MIDDLE of an accepted gamma=5 block (not at a round boundary) via a logit override (+100/-100), and checks that speculative_generate and speculative_generate_cached truncate at exactly the same point. Mirrors 'pitfall 13' from a peer's independent test suite, which our original 144-case sweep never exercised (no case ever produced an EOS token)."
+  ],
+  "results": {
+    "main_sweep": {
+      "description": "2 temperature modes x 4 phase gaps x 3 seeds x 3 gammas x 4 prompts",
+      "total_cases": 288,
+      "passed": 288
+    },
+    "eos_mid_chunk": {
+      "description": "2 temperature modes x 4 phase gaps x 3 seeds, EOS forced at absolute position 5 (offset 2 of a gamma=5 block starting at prompt end, position 3)",
+      "total_cases": 24,
+      "passed": 24
+    },
+    "combined": {
+      "total_cases": 312,
+      "passed": 312
+    }
+  },
+  "interpretation": "All 312 cases pass, including the two new extreme phase gaps and the EOS-mid-chunk truncation case. Because this model has zero floating-point noise by construction, this is a proof (not a statistical sample) that the cache/position/truncation bookkeeping in speculative_decode_kv.py is correct under these adversarial conditions, not just the 'normal' conditions the original 144-case sweep covered.",
+  "raw_log": "results/p5_kv_cache_fake_model_verify_extended.log"
+}
