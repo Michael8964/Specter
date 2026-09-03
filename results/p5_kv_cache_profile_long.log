@@ -1,0 +1,35 @@
+======================================================================
+Specter -- KV-cache time-breakdown diagnosis (why is it slower?)
+======================================================================
+gamma=5, max_new_tokens=400, n_runs=2
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:17,  3.71it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1049.19it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:00<04:28,  1.25it/s]Loading weights:  54%|█████▍    | 183/338 [00:00<00:00, 271.02it/s]Loading weights:  82%|████████▏ | 276/338 [00:01<00:00, 262.39it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 252.38it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 217.72it/s]
+
+Warming up (untimed)...
+
+Run 1 NO CACHE:  wall=57.894s  draft=37.142s  target=19.036s  unaccounted=1.717s
+Run 1 CACHED:    wall=56.221s  draft=35.944s  target=12.975s  crop=0.061s  unaccounted=7.242s
+
+Run 2 NO CACHE:  wall=65.268s  draft=42.054s  target=21.314s  unaccounted=1.900s
+Run 2 CACHED:    wall=42.373s  draft=26.929s  target=10.540s  crop=0.036s  unaccounted=4.868s
+
+======================================================================
+AVERAGE OVER 2 RUNS
+======================================================================
+                     No cache       Cached
+Wall time             61.581s      49.297s
+Draft time            39.598s      31.436s
+Target time           20.175s      11.757s
+Crop time                 n/a       0.049s
+Unaccounted            1.808s       6.055s
+
+("Unaccounted" = wall time minus every instrumented bucket -- Python-
+ level loop/bookkeeping overhead outside any single model or crop call.)
+======================================================================

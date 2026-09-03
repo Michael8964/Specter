@@ -1,0 +1,17 @@
+======================================================================
+Specter -- target-only KV-cache ablation (mirrors friend's benchmark)
+======================================================================
+max_new_tokens=64, n_runs=3
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:00<02:37,  2.14it/s]Loading weights:  54%|█████▍    | 184/338 [00:00<00:00, 423.58it/s]Loading weights:  85%|████████▍ | 286/338 [00:01<00:00, 251.24it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 263.10it/s]
+Warmed up (untimed).
+  Run 1: no-cache=3.700s  cached=2.148s  (no-cache 17.30 tok/s, cached 29.79 tok/s)
+  Run 2: no-cache=3.344s  cached=2.139s  (no-cache 19.14 tok/s, cached 29.92 tok/s)
+  Run 3: no-cache=3.307s  cached=2.137s  (no-cache 19.35 tok/s, cached 29.95 tok/s)
+======================================================================
+No cache: 3.451s +/- 0.217   (18.55 tok/s)
+Cached:   2.141s +/- 0.006   (29.89 tok/s)
+Speedup from caching alone (no-cache / cached): 1.611x
+======================================================================

@@ -1,0 +1,35 @@
+======================================================================
+Specter -- KV-cache time-breakdown diagnosis (why is it slower?)
+======================================================================
+gamma=5, max_new_tokens=400, n_runs=2
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:18,  3.69it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1039.90it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:01<05:37,  1.00s/it]Loading weights:  54%|█████▍    | 184/338 [00:01<00:00, 225.30it/s]Loading weights:  83%|████████▎ | 279/338 [00:01<00:00, 200.46it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 172.88it/s]
+
+Warming up (untimed)...
+
+Run 1 NO CACHE:  wall=52.092s  draft=33.394s  target=17.191s  unaccounted=1.507s
+Run 1 CACHED:    wall=49.970s  draft=31.816s  target=12.394s  crop=0.045s  unaccounted=5.714s
+
+Run 2 NO CACHE:  wall=60.534s  draft=38.908s  target=19.822s  unaccounted=1.805s
+Run 2 CACHED:    wall=43.429s  draft=27.738s  target=10.437s  crop=0.040s  unaccounted=5.214s
+
+======================================================================
+AVERAGE OVER 2 RUNS
+======================================================================
+                     No cache       Cached
+Wall time             56.313s      46.699s
+Draft time            36.151s      29.777s
+Target time           18.506s      11.415s
+Crop time                 n/a       0.043s
+Unaccounted            1.656s       5.464s
+
+("Unaccounted" = wall time minus every instrumented bucket -- Python-
+ level loop/bookkeeping overhead outside any single model or crop call.)
+======================================================================

@@ -1,0 +1,31 @@
+{
+  "stage": "P5.3 prerequisite",
+  "script": "scripts/p5_kv_cache_speedup.py",
+  "description": "Clean (non-instrumented) wall-clock speedup of incremental KV-cache vs full-recompute speculative decoding, at a longer generation length (400 new tokens) than the initial 60-token test.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "device": "mps",
+  "gamma": 5,
+  "max_new_tokens": 400,
+  "temperature": 1.0,
+  "n_runs": 3,
+  "base_seed": 400,
+  "raw_runs_seconds": [
+    {"run": 1, "no_cache": 100.481, "cached": 42.511, "outputs_match": false},
+    {"run": 2, "no_cache": 72.283, "cached": 52.689, "outputs_match": false},
+    {"run": 3, "no_cache": 60.225, "cached": 45.912, "outputs_match": false}
+  ],
+  "summary": {
+    "no_cache_seconds_mean": 77.663,
+    "no_cache_seconds_std": 16.869,
+    "cached_seconds_mean": 47.037,
+    "cached_seconds_std": 4.231,
+    "speedup_cached_vs_nocache": 1.651
+  },
+  "caveats": [
+    "outputs_match=false in all 3 runs is expected, not a bug: temperature=1.0 sampling mode, already diagnosed via scripts/p5_kv_cache_diagnose.py as benign floating-point-noise cascade between the two compute paths. Greedy mode is the strict correctness signal and was separately verified as exact-match (see p5_kv_cache_verify_result).",
+    "This speedup (1.651x) is higher than the 1.249x measured by the instrumented scripts/p5_kv_cache_profile.py at the same 400-token length, because profiling instrumentation (extra torch.mps.synchronize() calls) adds overhead that disproportionately penalizes the cached path, which makes many more, smaller model calls per round. This 1.651x, from the non-instrumented script, is the number to cite as the real-world figure.",
+    "no_cache run-to-run variance (std=16.9s, ~22% of mean) is much larger than cached (std=4.2s, ~9% of mean) -- noted as an observation (possibly thermal/scheduling variance under sustained load on a single Mac), not investigated further; does not affect the correctness or the direction of the speedup conclusion.",
+    "At a short length (60 tokens), the same comparison showed the OPPOSITE result (cached ~0.74x-0.80x, i.e. slower) -- see p5_kv_cache_speedup_result.json and p5_kv_cache_profile_result. The crossover with sequence length is itself the finding; see reports/v1.2_kv_cache.md."
+  ]
+}

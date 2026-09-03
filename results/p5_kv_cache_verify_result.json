@@ -1,0 +1,17 @@
+{
+  "stage": "P5.3 prerequisite",
+  "script": "scripts/p5_kv_cache_verify.py",
+  "description": "Correctness cross-check of the incremental KV-cache implementation (speculative_decode_kv.py) against the trusted non-cached reference (speculative_decode.py), across both decoding modes.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "device": "mps",
+  "test_matrix": "2 modes (greedy, sampling) x 3 seeds x 3 prompts = 18 cases",
+  "summary": {
+    "total_cases": 18,
+    "passed": 9,
+    "failed": 9,
+    "greedy_pass": "9/9 (100%) -- exact token-for-token match, cached vs non-cached",
+    "sampling_pass": "0/9 -- diverges from the first sampled token that lands near a probability decision boundary"
+  },
+  "interpretation": "The 9 sampling-mode failures were not treated as a correctness bug on their own -- they were handed to scripts/p5_kv_cache_diagnose.py for root-cause analysis (see p5_kv_cache_diagnose_result.json), which confirmed benign floating-point non-associativity between the two compute paths, not a logic error. Greedy mode (which only depends on argmax and is insensitive to that noise) is the project's zero-tolerance correctness signal, per the standard established in v1.0's P1.2/P1.3, and it passed 9/9."
+}

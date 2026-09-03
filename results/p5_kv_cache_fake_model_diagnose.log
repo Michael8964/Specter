@@ -1,0 +1,18 @@
+======================================================================
+Is PositionOnlyFakeModel's arithmetic batch-size-invariant?
+======================================================================
+  position 0: max abs diff (batched row vs standalone) = 0.000e+00
+  position 1: max abs diff (batched row vs standalone) = 0.000e+00
+  position 2: max abs diff (batched row vs standalone) = 0.000e+00
+  position 3: max abs diff (batched row vs standalone) = 0.000e+00
+  position 4: max abs diff (batched row vs standalone) = 0.000e+00
+  position 5: max abs diff (batched row vs standalone) = 0.000e+00
+  position 6: max abs diff (batched row vs standalone) = 0.000e+00
+  position 7: max abs diff (batched row vs standalone) = 0.000e+00
+  position 8: max abs diff (batched row vs standalone) = 0.000e+00
+  position 9: max abs diff (batched row vs standalone) = 0.000e+00
+======================================================================
+Bit-identical regardless of batching: this fake model IS noise-free.
+-> the sampling-mode failures in p5_kv_cache_fake_model_verify.py
+   point at a REAL logic bug (most likely the crop-target math), not noise.
+======================================================================

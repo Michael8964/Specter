@@ -1,0 +1,27 @@
+{
+  "stage": "P5.3 prerequisite",
+  "title": "Root-cause fix: draft-cache crop target missing the round's seed length",
+  "bug_found_via": "scripts/p5_kv_cache_fake_model_verify.py + scripts/p5_kv_cache_fake_model_trace.py (deterministic, position-only fake model -- zero floating-point noise, so any mismatch is provably a logic bug, not noise)",
+  "bug_description": "In speculative_decoding_step_cached (src/speculative_decode_kv.py), the draft cache was cropped to `draft_start_len + n_accepted`, omitting the `+ draft_seed_ids.shape[1]` term that the (correct) target-cache crop on the next line already had. On round 0 this cropped the draft cache to 0, discarding the just-cached prompt; every later round then computed the draft model's position_ids from a wrong (too-small) cache length, so from round 1 onward the draft model's own proposals were generated from the WRONG absolute position -- effectively random relative to a correctly-positioned draft.",
+  "why_greedy_mode_never_caught_it": "On any rejection, greedy mode's output is the target model's own greedy token, computed from the (correctly-tracked) target cache -- independent of what the mispositioned draft actually proposed. The bug degraded the draft's usefulness (silently tanking the real acceptance rate) without ever producing a wrong OUTPUT token in greedy mode, so scripts/p5_kv_cache_verify.py's greedy check (9/9 pass, both before and after the fix) could never have caught this on its own.",
+  "second_bug_found_while_fixing_the_first": "Correcting the crop target then failed a `delta<=0` invariant check in a full-acceptance round: draft_propose_cached's loop samples draft_tokens[gamma-1] but never feeds it back to the draft model (by design), so on full acceptance the draft cache was one position SHORT of the corrected target (prefix+gamma). Fixed by feeding that last draft token through the draft model once more (pure cache-sync forward pass, no generator draw, so it cannot perturb sampling parity) before cropping.",
+  "previous_incorrect_diagnosis": "scripts/p5_kv_cache_diagnose.py had attributed the real-model sampling-mode mismatches (p5_kv_cache_verify_result.json: 9/9 greedy pass, 9/9 sampling fail) to benign floating-point non-associativity between cached and non-cached compute paths. That diagnosis is now known to be WRONG (or at least premature) -- this crop bug was the real cause. Genuine floating-point noise almost certainly also exists at a much smaller scale (consistent with the ~1e-3 max-abs-diff p5_kv_cache_diagnose.py measured), but it was not the explanation for the systematic sampling divergence seen at the time.",
+  "verification_after_fix": {
+    "fake_model_deterministic": "144/144 passed (greedy AND sampling, exact token-for-token match) -- p5_kv_cache_fake_model_verify_after_fix.log. Zero floating-point noise source in this test, so this is a stronger correctness signal than the real-model test: proof by construction, not statistical inference.",
+    "real_model": "18/18 passed (2 modes x 3 seeds x 3 prompts, exact token-for-token match, INCLUDING sampling mode) -- p5_kv_cache_verify_after_bugfix.log. Previously 9/18 (sampling always failed)."
+  },
+  "speedup_before_vs_after_fix": {
+    "max_new_tokens": 400,
+    "gamma": 5,
+    "n_runs": 3,
+    "before_fix_speedup_cached_vs_nocache": 1.651,
+    "after_fix_speedup_cached_vs_nocache": 3.861,
+    "after_fix_raw": {
+      "no_cache_seconds_mean": 59.599,
+      "no_cache_seconds_std": 19.117,
+      "cached_seconds_mean": 15.435,
+      "cached_seconds_std": 1.196
+    },
+    "interpretation": "The bug was silently degrading the real acceptance rate from round 1 onward (draft proposals computed from a wrong absolute position are effectively uncorrelated with what the target model expects), so the pre-fix implementation was paying nearly the full draft-compute cost for close to none of speculative decoding's benefit. After the fix, cached wall time itself dropped by roughly two-thirds (49s-ish region to 15.4s) at the same settings -- consistent with the draft model now actually proposing usable candidates instead of noise."
+  }
+}

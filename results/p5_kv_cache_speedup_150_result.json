@@ -1,0 +1,16 @@
+{
+  "stage": "P5.3 prerequisite",
+  "script": "scripts/p5_kv_cache_speedup.py",
+  "description": "Initial wall-clock speedup check at the original short generation length (150 new tokens), run twice: once before and once after fixing the deprecated Cache.crop() call form in _crop_cache.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "device": "mps",
+  "gamma": 5,
+  "max_new_tokens": 150,
+  "n_runs": 3,
+  "runs": [
+    {"label": "before crop-form fix (deprecated positive-absolute .crop() call)", "no_cache_seconds": 10.989, "cached_seconds": 13.678, "speedup_cached_vs_nocache": 0.803},
+    {"label": "after crop-form fix (current negative-delta .crop() call)", "no_cache_seconds": 11.057, "cached_seconds": 14.942, "speedup_cached_vs_nocache": 0.740}
+  ],
+  "interpretation": "Cached was slower than non-cached in both runs at this short length; fixing the crop-call deprecation did not resolve it (if anything, slightly worse, within noise). This ruled out the crop-call form as the cause and motivated scripts/p5_kv_cache_profile.py to break down where the time was actually going. Superseded as the 'headline' number by p5_kv_cache_speedup_400_result.json once the length-dependence was understood -- see reports/v1.2_kv_cache.md."
+}

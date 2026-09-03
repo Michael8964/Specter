@@ -1,0 +1,13 @@
+====================================================================================================
+round | ref new_tokens       ref draft_probs ref accept           | kv new_tokens        kv draft_probs match
+====================================================================================================
+    0 | [13]                 [0.1724]     n_acc=0 bonus=None resamp=13 | [13]                 [0.1724]     OK
+    1 | [27]                 [0.04]       n_acc=0 bonus=None resamp=27 | [27]                 [0.0727]     OK
+    2 | [21, 19]             [0.1411]     n_acc=1 bonus=19 resamp=None | [20]                 [0.1546]     DIVERGE <---
+
+--- first divergence details ---
+ref:  draft_tokens=[21] draft_probs=[0.14105840027332306] target_probs=[0.09810440242290497]
+kv :  draft_tokens=[2] draft_probs=[0.1545758992433548] target_probs=[0.005978898145258427]
+====================================================================================================
+ref full sequence: [13, 27, 21, 19]
+kv  full sequence: [13, 27, 20]

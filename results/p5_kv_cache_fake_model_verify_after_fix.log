@@ -1,0 +1,15 @@
+======================================================================
+Specter -- deterministic fake-model KV-cache verification
+(no real neural net, no floating-point noise -- any mismatch here
+ is a real logic bug, not something we can wave away as 'expected')
+======================================================================
+
+Ran 144 cases (greedy + sampling, 2 phase gaps, 3 seeds, 3 gammas, 4 prompts)
+RESULT: 144/144 passed
+
+All cases matched exactly, including sampling mode. Since this fake model
+has no floating-point noise source, this is a STRONGER correctness signal
+than the real-model test: the cache/position bookkeeping in
+speculative_decode_kv.py is verified correct by construction, not by
+statistical argument.
+======================================================================

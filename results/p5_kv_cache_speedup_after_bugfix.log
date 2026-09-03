@@ -1,0 +1,26 @@
+============================================================
+Specter -- KV-cache wall-clock speedup
+============================================================
+gamma=5, max_new_tokens=400, n_runs=3
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:17,  3.73it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 1054.99it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:00<05:03,  1.11it/s]Loading weights:  68%|██████▊   | 231/338 [00:01<00:00, 305.08it/s]Loading weights: 100%|██████████| 338/338 [00:01<00:00, 233.32it/s]
+
+Warming up (untimed)...
+  Run 1: no-cache=86.508s  cached=16.594s  (outputs match: False)
+  Run 2: no-cache=43.876s  cached=13.788s  (outputs match: False)
+  Run 3: no-cache=48.412s  cached=15.923s  (outputs match: False)
+
+============================================================
+FINAL RESULT (3 runs, mean +/- std, seconds for one 400-token generation)
+============================================================
+No cache: 59.599s +/- 19.117
+Cached:   15.435s +/- 1.196
+Speedup from caching alone (no-cache / cached): 3.861x
+============================================================

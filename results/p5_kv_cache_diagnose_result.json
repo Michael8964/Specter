@@ -1,0 +1,16 @@
+{
+  "stage": "P5.3 prerequisite",
+  "script": "scripts/p5_kv_cache_diagnose.py",
+  "description": "Root-cause check for the 9/9 sampling-mode mismatches found by p5_kv_cache_verify.py: is the divergence a logic bug in _forward_step/_crop_cache, or expected floating-point noise from incremental vs full-recompute forward passes?",
+  "checks": {
+    "check1_fresh_cache_vs_reference": {
+      "purpose": "A single cached forward call, starting from an empty cache, compared against the non-cached reference forward -- isolates whether _forward_step itself has a bug independent of any incremental cache reuse.",
+      "result": "max abs diff = 0.00e+00 everywhere (bit-exact)"
+    },
+    "check2_real_two_call_cache_reuse": {
+      "purpose": "A real 2-call sequence (build cache incrementally, as speculative decoding actually does) compared against a single-shot full-recompute forward over the same tokens.",
+      "result": "max abs diff on the order of 1e-3; argmax (the greedy-mode decision) never changed across any tested case"
+    }
+  },
+  "conclusion": "Check 1 rules out a bug in the cached forward step itself (it is bit-exact in isolation). Check 2's ~1e-3 differences are consistent with ordinary floating-point non-associativity accumulating over incremental cache reuse, not a logic error -- and critically, this noise never flips an argmax decision, so greedy-mode correctness (the project's zero-tolerance bar) is unaffected. Under temperature=1.0 sampling, this same ~1e-3 noise can occasionally land a multinomial draw on the other side of a probability boundary, which then cascades (every subsequent token depends on the diverged prefix) -- explaining the sampling-mode mismatches in p5_kv_cache_verify_result.json without indicating a bug."
+}

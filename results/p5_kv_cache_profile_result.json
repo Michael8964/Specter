@@ -1,0 +1,31 @@
+{
+  "stage": "P5.3 prerequisite",
+  "script": "scripts/p5_kv_cache_profile.py",
+  "description": "Time-breakdown diagnosis (draft forward / target forward / cache-crop / unaccounted Python overhead) for cached vs non-cached speculative decoding, run at two generation lengths to test whether the short-length slowdown is compute-bound or overhead-bound.",
+  "draft_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "device": "mps",
+  "gamma": 5,
+  "n_runs": 2,
+  "conditions": [
+    {
+      "max_new_tokens": 60,
+      "base_seed": 500,
+      "average_over_2_runs": {
+        "no_cache": {"wall_s": 3.902, "draft_s": 2.430, "target_s": 1.223, "unaccounted_s": 0.248},
+        "cached":   {"wall_s": 5.589, "draft_s": 3.355, "target_s": 1.718, "crop_s": 0.004, "unaccounted_s": 0.511}
+      },
+      "wall_time_speedup_cached_vs_nocache": 0.698
+    },
+    {
+      "max_new_tokens": 400,
+      "base_seed": 500,
+      "average_over_2_runs": {
+        "no_cache": {"wall_s": 61.581, "draft_s": 39.598, "target_s": 20.175, "unaccounted_s": 1.808},
+        "cached":   {"wall_s": 49.297, "draft_s": 31.436, "target_s": 11.757, "crop_s": 0.049, "unaccounted_s": 6.055}
+      },
+      "wall_time_speedup_cached_vs_nocache": 1.249
+    }
+  ],
+  "interpretation": "At 60 tokens, cached is slower overall (0.698x): crop time is negligible (~4ms, ruled out as a cause) and unaccounted (Python/cache bookkeeping) overhead is higher for cached (+0.263s) but is not the dominant term -- the dominant term is that cached's own draft+target model-forward time is HIGHER than no-cache's, despite processing fewer tokens per call, consistent with per-call MPS dispatch overhead dominating over the (still small at this length) savings from not reprocessing history. At 400 tokens, this reverses: cached's draft+target time is now substantially LOWER than no-cache's (no-cache's cost of reprocessing a growing history has become large enough to matter), more than offsetting cached's larger (both absolutely and, at this length, proportionally) bookkeeping overhead, giving a net 1.249x speedup. This profiling-instrumented 1.249x differs from the non-instrumented p5_kv_cache_speedup_400_result.json's 1.651x at the same 400-token length because the profiling script's extra torch.mps.synchronize() calls (needed for accurate per-bucket timing) add overhead disproportionately to the cached path (which makes many more, smaller model calls per round) -- the non-instrumented number is the one to cite as representative."
+}

@@ -1,0 +1,41 @@
+============================================================
+Specter -- KV-cache numerical divergence diagnosis
+============================================================
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:30,  3.18it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 896.89it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:01<06:17,  1.12s/it]Loading weights:  55%|█████▍    | 185/338 [00:01<00:00, 208.97it/s]Loading weights:  87%|████████▋ | 293/338 [00:01<00:00, 176.02it/s]Loading weights: 100%|██████████| 338/338 [00:02<00:00, 148.67it/s]
+[draft ] prompt='The capital of France is'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=0.00e+00  argmax_same=True
+[target] prompt='The capital of France is'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=1.12e-03  argmax_same=True
+[draft ] prompt='Write a Python function that checks whet'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=1.49e-03  argmax_same=True
+[target] prompt='Write a Python function that checks whet'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=1.39e-03  argmax_same=True
+[draft ] prompt='Explain why the sky is blue in simple te'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=1.28e-03  argmax_same=True
+[target] prompt='Explain why the sky is blue in simple te'
+  check1 (fresh full-context via cached path): max|diff|=0.00e+00  argmax_same=True
+  check2 (prefix cached + 1 new token):         max|diff|=2.28e-03  argmax_same=True
+
+============================================================
+Worst-case check1 (sanity, should be ~0): 0.00e+00
+Worst-case check2 (real cache reuse):      2.28e-03
+
+Check 1 ~0 and check 2 small: this is consistent with the
+hypothesis that sampling-mode divergence is ordinary
+floating-point noise from cache reuse (small enough to almost
+never flip an argmax, but occasionally enough to flip which
+token a random draw lands on).
+============================================================
