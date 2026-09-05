@@ -201,7 +201,7 @@ def speculative_decoding_step_cached(
             resampled_token = _sample(adjusted.unsqueeze(0), generator)
         tail_token = resampled_token
     else:
-        # BUGFIX (found via scripts/p5_kv_cache_fake_model_trace.py, same
+        # BUGFIX (found via scripts/debug/p5_kv_cache_fake_model_trace.py, same
         # investigation as the crop-target fix above): draft_propose_cached's
         # loop samples draft_tokens[gamma-1] but never feeds it back into the
         # draft model (by design -- there is no gamma+1-th draft step), so on
@@ -221,7 +221,7 @@ def speculative_decoding_step_cached(
 
     # Roll both caches back to "confirmed length + n_accepted", discarding
     # anything from rejected candidates.
-    # BUGFIX (found via scripts/p5_kv_cache_fake_model_trace.py): this used to
+    # BUGFIX (found via scripts/debug/p5_kv_cache_fake_model_trace.py): this used to
     # read `_crop_cache(draft_cache, draft_start_len + n_accepted)`, missing the
     # `+ draft_seed_ids.shape[1]` term that target_cache's crop (one line below)
     # already had. On round 0 that cropped the draft cache to 0, wiping the

@@ -3,7 +3,7 @@ P5.3 prerequisite -- deterministic (position-only) fake-model cache verification
 
 Why this exists: scripts/p5_kv_cache_verify.py uses REAL Qwen models, so its
 sampling-mode mismatches could only be explained by *inference*, not proof
-("we diagnosed it as floating-point noise" -- p5_kv_cache_diagnose.py -- but a
+("we diagnosed it as floating-point noise" -- scripts/debug/p5_kv_cache_diagnose.py -- but a
 real logic bug affecting position bookkeeping could in principle hide behind
 that same excuse). It's also blind to one specific class of bug: Qwen uses
 RoPE, a RELATIVE positional encoding -- if our cache's internal notion of

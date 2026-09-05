@@ -115,7 +115,7 @@ def main():
         # Sampling-mode mismatches under temperature=1.0 are the EXPECTED
         # signature of floating-point non-associativity between the cached
         # (multi-call, incremental) and non-cached (single full-recompute)
-        # forward passes -- confirmed by scripts/p5_kv_cache_diagnose.py
+        # forward passes -- confirmed by scripts/debug/p5_kv_cache_diagnose.py
         # (max abs diff ~1e-3, argmax never flips). A ~1e-3 difference can
         # occasionally land a multinomial draw on the other side of a
         # probability boundary, which then cascades (every later token
@@ -125,7 +125,7 @@ def main():
         print("\nAll greedy cases matched exactly (the zero-tolerance bar) --")
         print("the cached implementation IS correct. The sampling-mode diffs")
         print("above are the expected floating-point-noise cascade under")
-        print("temperature=1.0, not a bug (see scripts/p5_kv_cache_diagnose.py).")
+        print("temperature=1.0, not a bug (see scripts/debug/p5_kv_cache_diagnose.py).")
         print("Timing numbers from this implementation ARE trustworthy.")
     else:
         print("All cases matched token-for-token. KV-cache implementation verified")
