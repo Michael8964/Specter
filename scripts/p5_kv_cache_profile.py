@@ -19,6 +19,22 @@ single instrumented call. If the cached version's draft+target forward
 time is much lower (as expected from avoiding redundant recompute) but its
 "unaccounted" bucket is much higher, that points to per-call Python/cache-
 management overhead -- not the model math itself -- as the real cause.
+
+REWRITE (2026-09-05, after the P5.3 crop-target bugfix in commit e4ec874):
+this script used to have its own hand-rolled, standalone copy of both the
+cached and non-cached generation loops, instrumented inline -- and that
+copy was never updated when the real crop-target bug (missing the
+`+ seed.shape[1]` term) was found and fixed in
+src/speculative_decode_kv.py. It kept measuring the OLD, buggy behavior
+indefinitely, silently, because nothing forced the two copies to stay in
+sync. This is now fixed the same way the crop-target formula itself was
+fixed (commit a0e0d10): instead of a second hand-written copy of the
+algorithm, this script calls the real, verified
+speculative_generate/speculative_generate_cached directly, and gets its
+draft/target/crop time buckets by temporarily monkey-patching the
+relevant module-level functions with timing wrappers, then restoring the
+originals. There is now exactly one implementation of the algorithm in
+this repo -- this script cannot drift from it again.
 """
 
 import sys
@@ -30,8 +46,8 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import torch
 
 from src.model_loader import DRAFT_MODEL_NAME, TARGET_MODEL_NAME, load_model_and_tokenizer
-from src.speculative_decode import _sample, _next_token_probs
-from src.speculative_decode_kv import _forward_step, _crop_cache, _cache_len
+import src.speculative_decode as sd
+import src.speculative_decode_kv as sdkv
 
 
 PROMPT = (
@@ -49,163 +65,91 @@ def sync():
         torch.mps.synchronize()
 
 
-def timed(fn, *args, **kwargs):
-    sync()
-    t0 = time.perf_counter()
-    result = fn(*args, **kwargs)
-    sync()
-    return result, time.perf_counter() - t0
+class Bucket:
+    """Just an accumulator: total wall time (device-synced) spent inside
+    whatever function this bucket is attached to, across an entire run."""
+
+    def __init__(self):
+        self.total = 0.0
+
+
+def _timed_wrapper(fn, bucket):
+    """Wrap `fn` so every call adds its synced wall time to `bucket.total`
+    and otherwise behaves EXACTLY like `fn` -- same args, same return
+    value. Used to instrument the real implementation without changing
+    a single line of its logic."""
+
+    def wrapped(*args, **kwargs):
+        sync()
+        t0 = time.perf_counter()
+        result = fn(*args, **kwargs)
+        sync()
+        bucket.total += time.perf_counter() - t0
+        return result
+
+    return wrapped
+
+
+class patched_timers:
+    """Context manager: temporarily replace module-level function names
+    with timing-instrumented wrappers, then restore the originals on
+    exit. `replacements` maps function name -> Bucket to accumulate into.
+
+    This is what lets this script measure the REAL implementation's
+    internals (draft calls / target calls / crop calls) without keeping a
+    second, hand-written copy of the algorithm around to drift out of
+    sync with it -- which is exactly what happened to the version of this
+    script this replaces (see module docstring)."""
+
+    def __init__(self, module, **replacements):
+        self.module = module
+        self.replacements = replacements
+        self._originals = {}
+
+    def __enter__(self):
+        for name in self.replacements:
+            self._originals[name] = getattr(self.module, name)
+        for name, bucket in self.replacements.items():
+            setattr(self.module, name, _timed_wrapper(self._originals[name], bucket))
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        for name, fn in self._originals.items():
+            setattr(self.module, name, fn)
+        return False
 
 
 def run_nocache(draft_model, target_model, tokenizer, generator):
-    device = next(draft_model.parameters()).device
-    input_ids = tokenizer(PROMPT, return_tensors="pt")["input_ids"].to(device)
-
-    draft_time = target_time = 0.0
-    generated = 0
-
-    sync()
-    wall_start = time.perf_counter()
-
-    while generated < MAX_NEW_TOKENS:
-        remaining = MAX_NEW_TOKENS - generated
-        gamma = min(GAMMA, remaining)
-
-        cur = input_ids
-        draft_tokens, draft_dists = [], []
-        for _ in range(gamma):
-            probs, dt = timed(_next_token_probs, draft_model, cur)
-            draft_time += dt
-            probs = probs.squeeze(0)
-            token = _sample(probs.unsqueeze(0), generator)
-            draft_tokens.append(token)
-            draft_dists.append(probs)
-            cur = torch.cat([cur, torch.tensor([[token]], device=device)], dim=-1)
-
-        full_ids = torch.cat([input_ids, torch.tensor([draft_tokens], device=device)], dim=-1)
-        ctx_len = input_ids.shape[1]
-
-        def _tv():
-            with torch.inference_mode():
-                logits = target_model(input_ids=full_ids).logits
-            return torch.softmax(logits[:, ctx_len - 1: ctx_len + gamma, :].float(), dim=-1).squeeze(0)
-
-        target_dists_all, tt = timed(_tv)
-        target_time += tt
-        target_dists = [target_dists_all[i] for i in range(gamma + 1)]
-
-        n_accepted = 0
-        for i in range(gamma):
-            token = draft_tokens[i]
-            p_draft = draft_dists[i][token].item()
-            p_target = target_dists[i][token].item()
-            r = torch.rand(1, generator=generator).item()
-            accept_prob = min(1.0, p_target / p_draft) if p_draft > 0 else 0.0
-            if r < accept_prob:
-                n_accepted += 1
-            else:
-                break
-
-        if n_accepted < gamma:
-            p_t, p_d = target_dists[n_accepted], draft_dists[n_accepted]
-            adjusted = torch.clamp(p_t - p_d, min=0.0)
-            total = adjusted.sum()
-            if total <= 0:
-                adjusted, total = p_t, p_t.sum()
-            tail = _sample((adjusted / total).unsqueeze(0), generator)
-        else:
-            tail = _sample(target_dists[gamma].unsqueeze(0), generator)
-
-        new_tokens = draft_tokens[:n_accepted] + [tail]
-        cutoff = min(len(new_tokens), remaining)
-        new_tokens = new_tokens[:cutoff]
-        input_ids = torch.cat([input_ids, torch.tensor([new_tokens], device=device)], dim=-1)
-        generated += len(new_tokens)
-
-    sync()
-    wall_time = time.perf_counter() - wall_start
-    return wall_time, draft_time, target_time, 0.0
+    draft_bucket, target_bucket = Bucket(), Bucket()
+    with patched_timers(sd, draft_propose=draft_bucket, target_verify=target_bucket):
+        sync()
+        t0 = time.perf_counter()
+        sd.speculative_generate(
+            draft_model, target_model, tokenizer, PROMPT,
+            gamma=GAMMA, max_new_tokens=MAX_NEW_TOKENS, temperature=1.0, generator=generator,
+        )
+        sync()
+        wall_time = time.perf_counter() - t0
+    return wall_time, draft_bucket.total, target_bucket.total, 0.0
 
 
 def run_cached(draft_model, target_model, tokenizer, generator):
-    device = next(draft_model.parameters()).device
-    prompt_ids = tokenizer(PROMPT, return_tensors="pt")["input_ids"].to(device)
-
-    draft_time = target_time = crop_time = 0.0
-    generated = 0
-    draft_seed = prompt_ids
-    target_seed = prompt_ids
-    draft_cache = None
-    target_cache = None
-
-    sync()
-    wall_start = time.perf_counter()
-
-    while generated < MAX_NEW_TOKENS:
-        remaining = MAX_NEW_TOKENS - generated
-        gamma = min(GAMMA, remaining)
-
-        draft_start_len = _cache_len(draft_cache)
-        target_start_len = _cache_len(target_cache)
-
-        cur_new = draft_seed
-        draft_tokens, draft_dists = [], []
-        for _ in range(gamma):
-            (step_dists, draft_cache), dt = timed(_forward_step, draft_model, cur_new, draft_cache)
-            draft_time += dt
-            probs = step_dists[-1]
-            token = _sample(probs.unsqueeze(0), generator)
-            draft_tokens.append(token)
-            draft_dists.append(probs)
-            cur_new = torch.tensor([[token]], device=device)
-
-        draft_tensor = torch.tensor([draft_tokens], device=device)
-        new_ids = torch.cat([target_seed, draft_tensor], dim=-1)
-        (dists, target_cache), tt = timed(_forward_step, target_model, new_ids, target_cache)
-        target_time += tt
-        target_dists = [dists[i] for i in range(dists.shape[0] - gamma - 1, dists.shape[0])]
-
-        n_accepted = 0
-        for i in range(gamma):
-            token = draft_tokens[i]
-            p_draft = draft_dists[i][token].item()
-            p_target = target_dists[i][token].item()
-            r = torch.rand(1, generator=generator).item()
-            accept_prob = min(1.0, p_target / p_draft) if p_draft > 0 else 0.0
-            if r < accept_prob:
-                n_accepted += 1
-            else:
-                break
-
-        if n_accepted < gamma:
-            p_t, p_d = target_dists[n_accepted], draft_dists[n_accepted]
-            adjusted = torch.clamp(p_t - p_d, min=0.0)
-            total = adjusted.sum()
-            if total <= 0:
-                adjusted, total = p_t, p_t.sum()
-            tail = _sample((adjusted / total).unsqueeze(0), generator)
-        else:
-            tail = _sample(target_dists[gamma].unsqueeze(0), generator)
-
-        new_draft_cache, ct1 = timed(_crop_cache, draft_cache, draft_start_len + n_accepted)
-        crop_time += ct1
-        draft_cache = new_draft_cache
-
-        new_target_cache, ct2 = timed(_crop_cache, target_cache, target_start_len + target_seed.shape[1] + n_accepted)
-        crop_time += ct2
-        target_cache = new_target_cache
-
-        next_seed = torch.tensor([[tail]], device=device)
-        draft_seed = next_seed
-        target_seed = next_seed
-
-        new_tokens = draft_tokens[:n_accepted] + [tail]
-        cutoff = min(len(new_tokens), remaining)
-        generated += cutoff
-
-    sync()
-    wall_time = time.perf_counter() - wall_start
-    return wall_time, draft_time, target_time, crop_time
+    draft_bucket, target_bucket, crop_bucket = Bucket(), Bucket(), Bucket()
+    with patched_timers(
+        sdkv,
+        draft_propose_cached=draft_bucket,
+        target_verify_cached=target_bucket,
+        _crop_cache=crop_bucket,
+    ):
+        sync()
+        t0 = time.perf_counter()
+        sdkv.speculative_generate_cached(
+            draft_model, target_model, tokenizer, PROMPT,
+            gamma=GAMMA, max_new_tokens=MAX_NEW_TOKENS, temperature=1.0, generator=generator,
+        )
+        sync()
+        wall_time = time.perf_counter() - t0
+    return wall_time, draft_bucket.total, target_bucket.total, crop_bucket.total
 
 
 def mean(values):
@@ -263,6 +207,7 @@ def main():
     print(f"{'Target time':16s} {nc_target:11.3f}s {c_target:11.3f}s")
     print(f"{'Crop time':16s} {'n/a':>12s} {c_crop:11.3f}s")
     print(f"{'Unaccounted':16s} {nc_unacc:11.3f}s {c_unacc:11.3f}s")
+    print(f"\nSpeedup (wall, no-cache / cached): {nc_wall/c_wall:.3f}x")
     print("\n(\"Unaccounted\" = wall time minus every instrumented bucket -- Python-")
     print(" level loop/bookkeeping overhead outside any single model or crop call.)")
     print("=" * 70)

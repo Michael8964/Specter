@@ -1,0 +1,17 @@
+{
+  "script": "scripts/p5_kv_cache_profile.py",
+  "purpose": "Time-breakdown re-check after both crop-target bugfixes and the DRY refactor. Also uncovered that this script's PREVIOUS version had its own hand-duplicated, never-updated copy of the algorithm that still carried the original crop-target bug -- so it was rewritten to call the real, verified speculative_generate/speculative_generate_cached via monkey-patched timing wrappers instead of a second hand-written implementation.",
+  "config": {"gamma": 5, "max_new_tokens": 400, "n_runs": 2, "base_seed": 500},
+  "per_run": [
+    {"run": 1, "no_cache": {"wall_s": 58.712, "draft_s": 38.949, "target_s": 19.250, "unaccounted_s": 0.513}, "cached": {"wall_s": 17.881, "draft_s": 12.306, "target_s": 4.494, "crop_s": 0.011, "unaccounted_s": 1.070}},
+    {"run": 2, "no_cache": {"wall_s": 76.548, "draft_s": 50.265, "target_s": 25.691, "unaccounted_s": 0.592}, "cached": {"wall_s": 19.758, "draft_s": 13.761, "target_s": 4.765, "crop_s": 0.014, "unaccounted_s": 1.218}}
+  ],
+  "average": {
+    "no_cache": {"wall_s": 67.630, "draft_s": 44.607, "target_s": 22.471, "unaccounted_s": 0.552},
+    "cached": {"wall_s": 18.819, "draft_s": 13.034, "target_s": 4.630, "crop_s": 0.012, "unaccounted_s": 1.144},
+    "speedup": 3.594
+  },
+  "interpretation": "3.594x is now consistent with p5_kv_cache_speedup.py's independently-measured 3.861x (seed 400) and 4.400x (seed 900) -- the previous profile run's 1.19x was an artifact of the stale duplicate implementation still carrying the original crop-target bug, not a real finding about caching overhead. Crop time is negligible (0.012s total across ~80 rounds for 400 tokens) -- it was never the bottleneck. Draft and target forward time both drop by roughly 3-5x under caching, which is where the real benefit comes from.",
+  "open_question_not_yet_reconfirmed": "The length-crossover claim in v1.2_kv_cache.md Section 3.3 (60 tokens: cached is 0.70-0.80x, i.e. SLOWER) was measured with the OLD, buggy, hand-duplicated version of this script, before this rewrite. It has not been re-run at 60 tokens with the corrected script -- user explicitly deferred this re-test to move on to P5.3. Flagged as unconfirmed, not asserted true or false, in the report.",
+  "raw_log": "results/p5_kv_cache_profile_after_bugfix.log"
+}

@@ -1,0 +1,37 @@
+======================================================================
+Specter -- KV-cache time-breakdown diagnosis (why is it slower?)
+======================================================================
+gamma=5, max_new_tokens=400, n_runs=2
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:00<01:33,  3.09it/s]Loading weights: 100%|██████████| 290/290 [00:00<00:00, 876.92it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:01<06:31,  1.16s/it]Loading weights:  58%|█████▊    | 195/338 [00:01<00:00, 212.65it/s]Loading weights:  91%|█████████ | 306/338 [00:01<00:00, 179.73it/s]Loading weights: 100%|██████████| 338/338 [00:02<00:00, 157.49it/s]
+
+Warming up (untimed)...
+
+Run 1 NO CACHE:  wall=58.712s  draft=38.949s  target=19.250s  unaccounted=0.513s
+Run 1 CACHED:    wall=17.881s  draft=12.306s  target=4.494s  crop=0.011s  unaccounted=1.070s
+
+Run 2 NO CACHE:  wall=76.548s  draft=50.265s  target=25.691s  unaccounted=0.592s
+Run 2 CACHED:    wall=19.758s  draft=13.761s  target=4.765s  crop=0.014s  unaccounted=1.218s
+
+======================================================================
+AVERAGE OVER 2 RUNS
+======================================================================
+                     No cache       Cached
+Wall time             67.630s      18.819s
+Draft time            44.607s      13.034s
+Target time           22.471s       4.630s
+Crop time                 n/a       0.012s
+Unaccounted            0.552s       1.144s
+
+Speedup (wall, no-cache / cached): 3.594x
+
+("Unaccounted" = wall time minus every instrumented bucket -- Python-
+ level loop/bookkeeping overhead outside any single model or crop call.)
+======================================================================
