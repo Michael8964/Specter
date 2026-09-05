@@ -1,0 +1,25 @@
+{
+  "script": "scripts/p5_circuit_breaker_switch_cost.py",
+  "purpose": "P5.3 hard requirement: measure the REAL KV-cache rebuild ('reactivation') cost when the circuit breaker re-enables speculative decoding after disabling it, instead of assuming switching is free (the plan's explicit critique of BanditSpec). The only real cost is the draft model's one-shot catch-up forward pass over however many tokens the target model generated alone while speculative decoding was disabled (the target side has no rebuild cost at all -- it never stops running its own cache).",
+  "config": {
+    "gap_sizes_tokens": [1, 5, 10, 20, 50, 100],
+    "n_runs_per_gap": 15,
+    "base_seed": 800,
+    "prompt_len_tokens": 21
+  },
+  "revision_note": "First attempt (n_runs=5, single global warm-up) produced noisy, non-monotonic results (e.g. gap=5 mean 31.15ms +/- 33.37ms std -- std larger than the mean) -- suspected MPS per-input-shape kernel-compile cost polluting the first call at each new gap size. Fixed by warming up each gap size individually (untimed) before timing it, and raising n_runs to 15. Also switched the target model's 'missed token' generation to use its own KV cache for speed (this part is never inside the timed block, so it doesn't affect the measured numbers, only how long the script takes to run).",
+  "results_ms": {
+    "1":   {"mean": 15.23, "median": 14.98, "std": 0.81},
+    "5":   {"mean": 16.66, "median": 16.53, "std": 0.66},
+    "10":  {"mean": 18.36, "median": 18.30, "std": 0.18},
+    "20":  {"mean": 20.70, "median": 20.69, "std": 0.13},
+    "50":  {"mean": 24.10, "median": 23.91, "std": 0.65},
+    "100": {"mean": 32.34, "median": 31.55, "std": 1.70}
+  },
+  "nightjar_reference_range_ms": [17.87, 102.03],
+  "verdict_vs_nightjar": {
+    "1": "below range", "5": "below range",
+    "10": "within range", "20": "within range", "50": "within range", "100": "within range"
+  },
+  "interpretation": "Clean, low-variance (std is roughly 1-8% of the mean at every gap size after the per-gap warmup fix), monotonically increasing with gap size -- a real, trustworthy measurement, not noise. Small gaps (1-5 tokens missed) rebuild faster than Nightjar's reported range; from 10 tokens missed onward, the measured cost falls within Nightjar's range, suggesting our draft/target model pair (0.5B/1.5B on Mac MPS) produces switching costs of a plausible, comparable order of magnitude to a real published system, not wildly off. This satisfies P5.3's requirement to measure a real number rather than assume switching is free."
+}
