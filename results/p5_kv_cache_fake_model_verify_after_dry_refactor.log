@@ -1,0 +1,33 @@
+======================================================================
+Specter -- deterministic fake-model KV-cache verification
+(no real neural net, no floating-point noise -- any mismatch here
+ is a real logic bug, not something we can wave away as 'expected')
+======================================================================
+
+Ran 288 cases (greedy + sampling, 4 phase gaps, 3 seeds, 3 gammas, 4 prompts)
+RESULT: 288/288 passed
+
+All cases matched exactly, including sampling mode. Since this fake model
+has no floating-point noise source, this is a STRONGER correctness signal
+than the real-model test: the cache/position bookkeeping in
+speculative_decode_kv.py is verified correct by construction, not by
+statistical argument.
+======================================================================
+
+======================================================================
+Extra test 1: EOS forced to land MID-WAY through an accepted
+gamma-sized block (not at a round boundary) -- '坑13' from the
+friend's test suite. A naive/buggy truncation could stop one token
+early or late, or -- the scarier failure mode -- the cached and
+non-cached paths could each truncate 'correctly' by their own logic
+but at DIFFERENT points, which is exactly what this test catches.
+======================================================================
+
+Ran 24 cases; RESULT: 24/24 passed
+======================================================================
+
+######################################################################
+COMBINED RESULT (main sweep + EOS-mid-chunk test): 312/312 passed
+All cases passed, including the extreme phase gaps and the
+EOS-mid-chunk truncation-parity check.
+######################################################################

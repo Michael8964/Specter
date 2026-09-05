@@ -1,0 +1,38 @@
+============================================================
+Specter -- KV-cache correctness cross-check
+(cached implementation must match the non-cached ground truth
+ token-for-token, same standard as p1_greedy_verifier.py)
+============================================================
+
+Loading Draft...
+Loading Qwen/Qwen2.5-0.5B-Instruct on mps...
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/290 [00:00<?, ?it/s]Loading weights:   0%|          | 1/290 [00:01<04:54,  1.02s/it]Loading weights: 100%|██████████| 290/290 [00:01<00:00, 283.98it/s]
+
+Loading Target...
+Loading Qwen/Qwen2.5-1.5B-Instruct on mps...
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights:   0%|          | 1/338 [00:01<08:22,  1.49s/it]Loading weights:  51%|█████     | 172/338 [00:01<00:01, 148.65it/s]Loading weights:  78%|███████▊  | 262/338 [00:02<00:00, 122.05it/s]Loading weights:  93%|█████████▎| 316/338 [00:03<00:00, 115.39it/s]Loading weights: 100%|██████████| 338/338 [00:03<00:00, 106.25it/s]
+[PASS] mode=greedy   seed=0 prompt='Write a Python function that checks whet'
+[PASS] mode=greedy   seed=0 prompt='The capital of France is'
+[PASS] mode=greedy   seed=0 prompt='Explain why the sky is blue in simple te'
+[PASS] mode=greedy   seed=1 prompt='Write a Python function that checks whet'
+[PASS] mode=greedy   seed=1 prompt='The capital of France is'
+[PASS] mode=greedy   seed=1 prompt='Explain why the sky is blue in simple te'
+[PASS] mode=greedy   seed=2 prompt='Write a Python function that checks whet'
+[PASS] mode=greedy   seed=2 prompt='The capital of France is'
+[PASS] mode=greedy   seed=2 prompt='Explain why the sky is blue in simple te'
+[PASS] mode=sampling seed=0 prompt='Write a Python function that checks whet'
+[PASS] mode=sampling seed=0 prompt='The capital of France is'
+[PASS] mode=sampling seed=0 prompt='Explain why the sky is blue in simple te'
+[PASS] mode=sampling seed=1 prompt='Write a Python function that checks whet'
+[PASS] mode=sampling seed=1 prompt='The capital of France is'
+[PASS] mode=sampling seed=1 prompt='Explain why the sky is blue in simple te'
+[PASS] mode=sampling seed=2 prompt='Write a Python function that checks whet'
+[PASS] mode=sampling seed=2 prompt='The capital of France is'
+[PASS] mode=sampling seed=2 prompt='Explain why the sky is blue in simple te'
+
+============================================================
+RESULT: 18/18 passed
+All cases matched token-for-token. KV-cache implementation verified
+against the non-cached ground truth.
+============================================================

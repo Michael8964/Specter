@@ -70,6 +70,26 @@ def _crop_cache(past_key_values, new_len):
     return tuple((k[..., :new_len, :], v[..., :new_len, :]) for k, v in past_key_values)
 
 
+def _crop_target_len(start_len, seed_ids, n_accepted):
+    """The correct post-round cache length for EITHER cache (draft or
+    target): whatever was already confirmed before this round, plus this
+    round's seed tokens (the whole prompt on round 0, exactly one
+    carry-over tail token on every round after that), plus however many of
+    this round's gamma candidates actually got accepted.
+
+    Shared by both callers in speculative_decoding_step_cached() on
+    purpose: draft_cache's crop target and target_cache's crop target are
+    the SAME formula applied to two different (start_len, seed_ids) pairs.
+    Writing it out twice by hand is exactly how the P5.3 crop-target bug
+    happened -- draft's hand-written copy silently dropped the `seed_ids`
+    term while target's did not (see the BUGFIX comment in
+    speculative_decoding_step_cached below). Routing both call sites
+    through one function makes that specific class of drift impossible
+    going forward, instead of merely fixed once.
+    """
+    return start_len + seed_ids.shape[1] + n_accepted
+
+
 def _forward_step(model, new_ids, past_key_values, keep_last_n=None):
     """Feed ONLY the tokens not yet in past_key_values; return the softmax
     distribution at the last `keep_last_n` new positions (default: all of
@@ -233,8 +253,13 @@ def speculative_decoding_step_cached(
     # mispositioned draft proposed) -- only visible as sampling-mode divergence
     # (p5_kv_cache_fake_model_verify.py) and, almost certainly, as a real
     # acceptance-rate/throughput hit in every real run so far.
-    draft_cache = _crop_cache(draft_cache, draft_start_len + draft_seed_ids.shape[1] + n_accepted)
-    target_cache = _crop_cache(target_cache, target_start_len + target_seed_ids.shape[1] + n_accepted)
+    #
+    # Follow-up (DRY refactor, after the fix above): both lines below now
+    # call the shared _crop_target_len() instead of repeating this formula
+    # by hand a second time -- the whole reason draft's copy could silently
+    # drop a term while target's didn't in the first place.
+    draft_cache = _crop_cache(draft_cache, _crop_target_len(draft_start_len, draft_seed_ids, n_accepted))
+    target_cache = _crop_cache(target_cache, _crop_target_len(target_start_len, target_seed_ids, n_accepted))
 
     device = draft_seed_ids.device
     next_seed = torch.tensor([[tail_token]], device=device)
