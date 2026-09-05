@@ -1,0 +1,17 @@
+======================================================================
+Specter -- P5.3 circuit breaker state machine verification
+(pure control logic, no model calls -- deterministic, hand-computed
+ expected event sequences; any mismatch is a real logic bug)
+======================================================================
+[PASS] never crosses threshold -> always speculative
+[PASS] clean ramp up/down -> disable then reactivate at the right step
+[PASS] spike then immediate drop -> dwell time still enforced
+[PASS] hysteresis band -> never reactivates while hovering between thresholds
+[PASS] boundary hovering -> exactly one disable event, no flapping
+[PASS] probe_interval_steps=3 -> only checks every 3rd step past dwell
+[PASS] multiple disable/reactivate cycles -> each handled independently
+[PASS] invalid config (enable_threshold > disable_threshold) is rejected at construction
+
+======================================================================
+RESULT: 8/8 scenarios passed
+======================================================================
