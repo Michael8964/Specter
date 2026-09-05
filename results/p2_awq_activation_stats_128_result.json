@@ -1,0 +1,33 @@
+{
+  "description": "The real P2.0 output: per-layer, per-input-channel activation statistics for Qwen2.5-1.5B-Instruct, collected over 128 C4 calibration samples. This is what P2.1's per-channel scaling calibration will consume.",
+  "meta": {
+    "target_model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "calibration_dataset": "allenai/c4 (en, streaming, shuffled, seed=0)",
+    "n_calibration_samples": 128,
+    "max_length": 512,
+    "n_layers_hooked": 197
+  },
+  "sanity_checks": {
+    "layer_count": "197 = 28 decoder layers x 7 Linear submodules (q/k/v/o_proj, gate/up/down_proj) + 1 lm_head -- matches Qwen2.5-1.5B-Instruct's known architecture",
+    "nan_or_inf_layers": 0,
+    "q_k_v_proj_consistency": "q_proj/k_proj/v_proj within the same decoder layer have byte-identical per-channel stats, as expected since they consume the same hidden_states input -- confirms the hook is reading INPUT, not output"
+  },
+  "notable_finding": {
+    "description": "Ranking layers by (max_abs across channels) / (average of mean_abs across channels) surfaces a small number of mlp.down_proj layers with extreme outlier ratios -- far above the typical ratio (~25-30x) seen in attention o_proj layers.",
+    "top_outlier_layers": [
+      {"layer": "model.layers.1.mlp.down_proj", "ratio": 153149.3},
+      {"layer": "model.layers.2.mlp.down_proj", "ratio": 54446.9},
+      {"layer": "model.layers.26.mlp.down_proj", "ratio": 19545.9},
+      {"layer": "model.layers.3.mlp.down_proj", "ratio": 4524.9},
+      {"layer": "model.layers.5.mlp.down_proj", "ratio": 2807.2}
+    ],
+    "typical_attention_o_proj_ratio": "~25-30x (e.g. layers 0, 7, 21)",
+    "interpretation": "This is the real-model manifestation of the exact phenomenon AWQ (and SmoothQuant/LLM.int8() before it) is built to handle: a small number of activation channels carry disproportionately large magnitude ('outlier channels'), concentrated in specific layers (mlp.down_proj here). Naively quantizing every channel with the same scale would let a handful of outlier channels dominate the quantization error budget. This is exactly the signal P2.1's per-channel scaling factors are meant to act on -- not a hypothetical from the paper, but something visibly present in this project's own calibration run.",
+    "caveat": "This is a scalar summary ratio for eyeballing which layers deserve attention, not a claim about which SPECIFIC channels are salient -- that requires looking at the full per-channel vector (in the .pt file), which P2.1 will do directly."
+  },
+  "output_files": {
+    "full_stats": "results/p2_awq_activation_stats.pt (per-channel tensors, consumed by P2.1)",
+    "summary": "results/p2_awq_activation_stats_summary.json (per-layer scalar summary, human-readable)"
+  },
+  "next_step": "P2.1 -- per-channel scaling factor calibration (AWQ's core algorithm). Estimated 3-4 days; the plan's own warning is that the hard part is the fake-quantize round->clamp->dequantize ORDER, not the scaling-factor math itself."
+}
