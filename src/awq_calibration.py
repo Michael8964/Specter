@@ -81,10 +81,22 @@ def register_activation_hooks(model: nn.Module) -> tuple[list, dict]:
             # in, not what comes out).
             x = inputs[0]
             if name not in stats:
+                # BUGFIX (found running the real P2.0 collector against
+                # Qwen2.5-1.5B-Instruct on MPS, after the CPU-only toy
+                # verification in p2_awq_stats_verify.py passed 7/7 without
+                # catching it): torch.zeros(in_features) with no device
+                # argument defaults to CPU. On CPU that happens to match
+                # the incoming activation tensor's device, so the toy test
+                # never noticed. On a real model running on mps:0, the
+                # accumulator stayed on CPU while `x` arrived on MPS, and
+                # `self.sum_abs += x.abs().sum(dim=0)` inside update()
+                # raised "Expected all tensors to be on the same device".
+                # Fix: allocate the accumulator on whatever device the
+                # activation itself is on.
                 stats[name] = ActivationStats(
                     in_features=in_features,
-                    sum_abs=torch.zeros(in_features),
-                    max_abs=torch.zeros(in_features),
+                    sum_abs=torch.zeros(in_features, device=x.device),
+                    max_abs=torch.zeros(in_features, device=x.device),
                 )
             stats[name].update(x)
 

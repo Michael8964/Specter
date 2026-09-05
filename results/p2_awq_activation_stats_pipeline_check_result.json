@@ -1,0 +1,28 @@
+{
+  "purpose": "Sanity-check scripts/p2_awq_activation_stats.py end-to-end against the real target model and real C4 data, before committing to the full n_samples=128 calibration run.",
+  "bug_found_and_fixed": {
+    "description": "src/awq_calibration.py's register_activation_hooks created the ActivationStats accumulator tensors (sum_abs, max_abs) with torch.zeros(in_features) -- no device argument, defaulting to CPU. The scripts/p2_awq_stats_verify.py toy test never caught this because its toy nn.Linear model was never moved to a device, so both the accumulator and the activation tensor happened to be on CPU. The real target model runs on mps:0, so the first real forward pass raised: 'RuntimeError: Expected all tensors to be on the same device, but found at least two devices, mps:0 and cpu!'",
+    "fix": "Allocate sum_abs/max_abs with device=x.device (the incoming activation tensor's device) instead of the implicit CPU default.",
+    "lesson": "Same category of lesson as the KV-cache work: a deterministic unit test passing does not guarantee correctness against the real model/hardware -- it only guarantees correctness of what it actually exercises. The toy test exercised the math; it never exercised device placement, because it never ran on anything but CPU."
+  },
+  "step1_dry_run": {
+    "n_samples": 8,
+    "n_layers_hooked": 197,
+    "seconds_per_sample": 0.10,
+    "calibration_dataset": "dry_run_hardcoded_sentences",
+    "result": "passed after the device-placement fix"
+  },
+  "step2_real_c4_smoke_test": {
+    "n_samples": 16,
+    "n_layers_hooked": 197,
+    "seconds_per_sample": 0.20,
+    "calibration_dataset": "allenai/c4 (en, streaming, shuffled)",
+    "result": "passed"
+  },
+  "consistency_check": {
+    "description": "q_proj, k_proj, v_proj within the same decoder layer all consume the exact same hidden_states input tensor in Qwen2's attention module. If the hook correctly captures INPUT (not output), their per-channel activation statistics must be byte-for-byte identical; if it accidentally captured OUTPUT, they would differ (each projects through a different weight matrix).",
+    "layer_count_check": "197 = 28 decoder layers x 7 Linear submodules (q/k/v/o_proj, gate/up/down_proj) + 1 lm_head -- matches Qwen2.5-1.5B-Instruct's known architecture (28 layers)",
+    "result": "q_proj/k_proj/v_proj statistics matched exactly in both the dry run and the real C4 run -- an additional, incidental correctness signal beyond the hand-computed unit test, obtained for free from running on the real model"
+  },
+  "next_step": "Run the full calibration collection: .venv/bin/python3 scripts/p2_awq_activation_stats.py --n-samples 128 (the default)"
+}

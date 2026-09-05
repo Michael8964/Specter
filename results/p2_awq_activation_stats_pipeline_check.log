@@ -1,0 +1,21 @@
+=== Step 1: dry-run (hardcoded sentences, no C4 download), n_samples=8 ===
+Loading calibration texts...
+Got 8 calibration texts.
+Running forward passes and collecting activation stats...
+  processed 8/8 samples (0.8s elapsed, 0.10s/sample)
+Saved full stats (tensors, 197 layers) to results/p2_awq_activation_stats.pt
+Saved human-readable summary to results/p2_awq_activation_stats_summary.json
+Done. Collected activation statistics for 197 Linear layers across 8 calibration samples.
+
+(NOTE: this run FIRST hit a RuntimeError before the device-placement bugfix
+below -- "Expected all tensors to be on the same device, but found at least
+two devices, mps:0 and cpu!" -- see the bugfix note in this same commit's
+diff to src/awq_calibration.py. The output above is the re-run AFTER the fix.)
+
+=== Step 2: real C4 smoke test, n_samples=16 ===
+Running forward passes and collecting activation stats...
+  processed 10/16 samples (2.1s elapsed, 0.21s/sample)
+  processed 16/16 samples (3.2s elapsed, 0.20s/sample)
+Saved full stats (tensors, 197 layers) to results/p2_awq_activation_stats.pt
+Saved human-readable summary to results/p2_awq_activation_stats_summary.json
+Done. Collected activation statistics for 197 Linear layers across 16 calibration samples.
