@@ -1,0 +1,27 @@
+{
+  "script": "scripts/p2_awq_stats_verify.py",
+  "purpose": "Deterministic, hand-computed verification of src/awq_calibration.py's ActivationStats + register_activation_hooks/remove_hooks, before running it on a real model.",
+  "test_setup": {
+    "model": "nn.Sequential(nn.Linear(4, 2, bias=False))",
+    "deliberate_design": "Linear layer weight set to +-100 (wildly different from input stats) so that if the hook accidentally captured `output` instead of `inputs[0]`, the test would fail loudly instead of silently passing -- this is the exact input-vs-output mistake project_plan_v9.md flags as easy to get backwards.",
+    "batch1": [[1, -2, 3, -4], [2, -2, 0, 4]],
+    "batch2": [[-5, 1, 1, 1]]
+  },
+  "hand_computed_expected": {
+    "n_samples": 3,
+    "mean_abs": [2.6667, 1.6667, 1.3333, 3.0],
+    "max_abs": [5.0, 2.0, 3.0, 4.0]
+  },
+  "result": "7/7 scenarios passed",
+  "scenarios": [
+    "exactly one Linear submodule hooked",
+    "n_samples == 3",
+    "mean_abs matches hand computation",
+    "max_abs matches hand computation",
+    "in_features recorded correctly",
+    "mean_abs() on zero samples raises ValueError",
+    "remove_hooks() stops further accumulation"
+  ],
+  "run_environment": "user's own .venv (torch required; sandboxed device_bash has no torch/cannot resolve the venv's python symlink)",
+  "next_step": "scripts/p2_awq_activation_stats.py -- run the same hook-based collector against the real target model (Qwen2.5-1.5B-Instruct) and real C4 calibration data. Start with --dry-run --n-samples 8, then a small real run, then the full n_samples=128 default."
+}

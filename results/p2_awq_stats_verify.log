@@ -1,0 +1,14 @@
+Specter -- P2.0 AWQ activation-statistics collector verification
+(hand-computed expected values, deterministic weights -- any
+ mismatch is a real bug, not noise)
+======================================================================
+[PASS] exactly one Linear submodule hooked (got 1)
+[PASS] n_samples == 3 (got 3)
+[PASS] mean_abs == [2.6667, 1.6667, 1.3333, 3.0] (got [2.6667, 1.6667, 1.3333, 3.0])
+[PASS] max_abs == [5.0, 2.0, 3.0, 4.0] (got [5.0, 2.0, 3.0, 4.0])
+[PASS] in_features == 4 (got 4)
+[PASS] mean_abs() on zero samples raises ValueError
+[PASS] remove_hooks() stops further accumulation (n_samples still 3)
+======================================================================
+RESULT: 7/7 scenarios passed
+======================================================================
